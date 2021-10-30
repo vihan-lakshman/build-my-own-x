@@ -8,7 +8,7 @@ fn print_filename(file_name: String) {
     if file_name.starts_with(".") {
         return;
     }
-    println!("{:?}", file_name);
+    println!("{}", file_name);
 }
 
 fn ls() -> io::Result<()> {
