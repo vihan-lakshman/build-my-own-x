@@ -7,6 +7,38 @@ use std::os::unix::fs::PermissionsExt;
 
 use colored::*;
 
+fn calculate_num_columns(filenames: &Vec<ColoredString>) -> (usize, usize) {
+    let termsize::Size {rows: _, cols} = termsize::get().unwrap();
+    let mut longest_name_length: u16 = 0;
+    for filename in filenames {
+        let length = (*&filename).len() as u16;
+        if length > longest_name_length {
+            longest_name_length = length;
+        }
+    }
+    let col_length = longest_name_length + 2;
+    return ((cols/col_length) as usize, col_length as usize)
+}
+
+fn print_filenames(mut filenames: Vec<ColoredString>) {
+    let (num_cols, col_length) = calculate_num_columns(&filenames);
+    let single_row = num_cols > filenames.len();
+    filenames.sort_by(|a, b| (*&a).cmp(*&b));
+    let mut col_count = 0;
+    for filename in &filenames {
+        if single_row {
+            print!("{}  ", filename);
+        } else {
+            print!("{:width$}", filename, width=col_length);
+        }
+        col_count += 1;
+        if col_count == num_cols {
+            print!("\n");
+            col_count = 0;
+        }
+    }
+}
+
 fn printable_filename(file_name: String, metadata: fs::Metadata) -> Option<ColoredString>  {
     if file_name.starts_with(".") {
         return None;
@@ -40,10 +72,7 @@ fn ls() -> io::Result<()> {
             filenames.push(formatted_file_name);
         }
     }
-    filenames.sort_by(|a, b| (*&a).cmp(*&b));
-    for file_name in &filenames {
-        print!("{}  ", file_name);
-    }
+    print_filenames(filenames);
     Ok(())
 }
 
