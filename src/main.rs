@@ -7,37 +7,42 @@ use std::os::unix::fs::PermissionsExt;
 
 use colored::*;
 
-fn print_filename(file_name: String, metadata: fs::Metadata) {
+fn printable_filename(file_name: String, metadata: fs::Metadata) -> Option<ColoredString>  {
     if file_name.starts_with(".") {
-        return;
+        return None;
     }
     if metadata.is_dir() {
-        print!("{}  ", file_name.blue());
-        return;
+        return Some(file_name.blue());
     }
     if metadata.file_type().is_symlink() {
-        print!("{}  ", file_name.cyan());
-        return;
+        return Some(file_name.cyan());
     }
     // Executable; will only work on POSIX; I don't care about Windows
     let permissions = metadata.permissions();
     if permissions.mode() & 0o111 != 0 {
-        print!("{}  ", file_name.green());
-        return;
+        return Some(file_name.green());
     }
-    print!("{}  ", file_name.white());
+    return Some(file_name.white());
 }
 
 fn ls() -> io::Result<()> {
+    let mut filenames = Vec::new();
     for entry in fs::read_dir(".")? {
         let entry = entry?;
         let file_name = entry.file_name();
         let metadata = entry.metadata()?;
         let str_file_name = file_name.into_string();
-        match str_file_name {
-            Ok(str_file_name) => print_filename(str_file_name, metadata),
-            Err(_str_file_name) => (), // invalid unicode name
+        let formatted_file_name = match str_file_name {
+            Ok(str_file_name) => printable_filename(str_file_name, metadata),
+            Err(_str_file_name) => continue, // invalid unicode name
+        };
+        if let Some(formatted_file_name) = formatted_file_name {
+            filenames.push(formatted_file_name);
         }
+    }
+    filenames.sort_by(|a, b| (*&a).cmp(*&b));
+    for file_name in &filenames {
+        print!("{}  ", file_name);
     }
     Ok(())
 }
@@ -60,4 +65,5 @@ fn main() {
             .spawn()
             .unwrap();
     }
+    print!("\n");
 }
