@@ -57,7 +57,7 @@ fn printable_filename(file_name: String, metadata: fs::Metadata) -> Option<Color
     return Some(file_name.white());
 }
 
-fn ls() -> io::Result<()> {
+fn ls() -> io::Result<Vec<ColoredString>> {
     let mut filenames = Vec::new();
     for entry in fs::read_dir(".")? {
         let entry = entry?;
@@ -72,8 +72,7 @@ fn ls() -> io::Result<()> {
             filenames.push(formatted_file_name);
         }
     }
-    print_filenames(filenames);
-    Ok(())
+    Ok(filenames)
 }
 
 
@@ -88,22 +87,39 @@ fn main() {
         stdin.read_line(&mut input).unwrap();
 
         // read_line leaves a trailing newline
-        let command = input.trim();
+        let commands = input.trim().split("|");
 
-        if command == "ls" {
-            let output = ls();
-            if let Err(output) = output {
-                println!("{:?}", output);
+        let mut prev_output: Option<Vec<ColoredString>> = None;
+
+        for command in commands {
+            let mut command_and_flags = command.trim().split(" ");
+            if let Some(command) = command_and_flags.nth(0) {
+                match command {
+                    "ls" => {
+                        let output = ls();
+                        if let Err(output) = output {
+                            println!("{:?}", output);
+                            return;
+                        } else if let Ok(output) = output {
+                            prev_output = Some(output)
+                        }
+                    },
+                    "exit" => {
+                        print!("\n");
+                        return;
+                    },
+                    "" => {},
+                    _ => {
+                        Command::new(command)
+                            .spawn()
+                            .unwrap();
+                    }
+                }
             }
         }
-        else if command == "exit" {
-            return;
-        } else {
-            Command::new(command)
-                .spawn()
-                .unwrap();
+        if let Some(output) = prev_output {
+            print_filenames(output);
         }
         print!("\n");
-        
     }
 }
