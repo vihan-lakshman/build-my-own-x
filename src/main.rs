@@ -104,6 +104,40 @@ fn main() {
                             prev_output = Some(output)
                         }
                     },
+                    "grep" => {
+                        let pattern: String;
+                        match command_and_flags.nth(0) {
+                            Some(command_pattern) => pattern = command_pattern.to_string(),
+                            None => {
+                                print!("Invalid grep call! Requires pattern!");
+                                continue;
+                            },
+                        }
+                        let grep_contents: Vec<ColoredString>;
+                        match command_and_flags.nth(0) {
+                            Some(file_pattern) => {
+                                // Open file
+                                // Put newline-split contents into grep_contents
+                                grep_contents = Vec::new();
+                            },
+                            None => {
+                                if let Some(output) = prev_output {
+                                    grep_contents = output;
+                                } else {
+                                    print!("Invalid grep call! Requires pattern!");
+                                    continue;
+                                }
+                            },
+                        }
+
+                        let mut passing_contents: Vec<ColoredString> = Vec::new();
+                        for line in grep_contents {
+                            if line.contains(&pattern[..]) {
+                                passing_contents.push(line);
+                            }
+                        }
+                        prev_output = Some(passing_contents);
+                    },
                     "exit" => {
                         print!("\n");
                         return;
