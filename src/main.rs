@@ -76,23 +76,34 @@ fn ls() -> io::Result<()> {
     Ok(())
 }
 
+
+// fn grep(pattern: String, filenames: Vec<ColoredString>) {
+//     return filenames;
+// }
+
 fn main() {
-    let mut input = String::new();
-    let stdin = io::stdin();
-    stdin.read_line(&mut input).unwrap();
+    loop {
+        let mut input = String::new();
+        let stdin = io::stdin();
+        stdin.read_line(&mut input).unwrap();
 
-    // read_line leaves a trailing newline
-    let command = input.trim();
+        // read_line leaves a trailing newline
+        let command = input.trim();
 
-    if command == "ls" {
-        let output = ls();
-        if let Err(output) = output {
-            println!("{:?}", output);
+        if command == "ls" {
+            let output = ls();
+            if let Err(output) = output {
+                println!("{:?}", output);
+            }
         }
-    } else {
-        Command::new(command)
-            .spawn()
-            .unwrap();
+        else if command == "exit" {
+            return;
+        } else {
+            Command::new(command)
+                .spawn()
+                .unwrap();
+        }
+        print!("\n");
+        
     }
-    print!("\n");
 }
